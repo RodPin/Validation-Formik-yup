@@ -1,0 +1,121 @@
+import React from "react";
+import {
+  SafeAreaView,
+  TextInput,
+  Button,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+  View,
+  Switch
+} from "react-native";
+import { Formik, FormikProps, Form, Field } from "formik";
+import * as yup from "yup";
+
+const FieldWrapper = ({ children, label, formikProps, formikKey }) => {
+  return (
+    <View style={{ padding: 10 }}>
+      <Text>{label}</Text>
+      {children}
+      <Text style={{ color: "red" }}>
+        {formikProps.touched[formikKey] && formikProps.errors[formikKey]}
+      </Text>
+    </View>
+  );
+};
+
+const validationSchema = yup.object().shape({
+  password: yup
+    .string()
+    .label("Password")
+    .required()
+    .min(2, "password too short")
+    .max(7, "pass too long"),
+  confirmPassword: yup
+    .string()
+    .required()
+    .label("Confirm Password")
+    .test("passwords-match", "Passwords must match", function(value) {
+      return (
+        //this.parent => our validation schema
+        this.parent.password === value
+      );
+    })
+});
+
+const StyledInput = ({ label, formikProps, formikKey, ...props }) => {
+  const inputsStyles = {
+    borderWidth: 1,
+    borderColor: "black",
+    padding: 10,
+    marginBottom: 3
+  };
+
+  if (formikProps.touched[formikKey] && formikProps.errors[formikKey]) {
+    inputsStyles.borderColor = "red";
+  }
+
+  return (
+    <FieldWrapper label={label} formikKey={formikKey} formikProps={formikProps}>
+      <TextInput
+        style={inputsStyles}
+        onChangeText={formikProps.handleChange(formikKey)}
+        onBlur={formikProps.handleBlur(formikKey)}
+        {...props}
+      />
+    </FieldWrapper>
+  );
+};
+
+export default class App extends React.Component {
+  render() {
+    return (
+      <SafeAreaView style={{ padding: 10 }}>
+        <Formik
+          initialValues={{
+            email: "",
+            password: "",
+            confirmPassword: "",
+            agreeToTerms: ""
+          }}
+          onSubmit={(values, actions) => {
+            alert(JSON.stringify(values));
+            //sets loading false
+            setTimeout(() => {
+              actions.setSubmitting(false);
+            }, 1000);
+          }}
+          validationSchema={validationSchema}
+        >
+          {formikProps => (
+            <React.Fragment>
+             
+              <StyledInput
+                label="Password"
+                formikProps={formikProps}
+                formikKey="password"
+                placeholder="password"
+                secureTextEntry
+              />
+
+              <StyledInput
+                label="Confirm Password"
+                formikProps={formikProps}
+                formikKey="confirmPassword"
+                placeholder="Confirm password"
+                secureTextEntry
+              />
+
+
+              {formikProps.isSubmitting ? (
+                <ActivityIndicator />
+              ) : (
+                <Button title="Submit" onPress={formikProps.handleSubmit} />
+              )}
+            </React.Fragment>
+          )}
+        </Formik>
+      </SafeAreaView>
+    );
+  }
+}
