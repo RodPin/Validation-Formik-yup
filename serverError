@@ -1,0 +1,180 @@
+import React from "react";
+import {
+  SafeAreaView,
+  TextInput,
+  Button,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+  View,
+  Switch
+} from "react-native";
+import { Formik, FormikProps, Form, Field } from "formik";
+import * as yup from "yup";
+
+const simulateSignUp = ({ email }) => {
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      if (email === "a@a.com") {
+        rej(new Error("Stop joking with that email adress"));
+      }
+      res(true);
+    }, 1500);
+  });
+};
+const FieldWrapper = ({ children, label, formikProps, formikKey }) => {
+  return (
+    <View style={{ padding: 10 }}>
+      <Text>{label}</Text>
+      {children}
+      <Text style={{ color: "red" }}>
+        {formikProps.touched[formikKey] && formikProps.errors[formikKey]}
+      </Text>
+    </View>
+  );
+};
+
+const validationSchema = yup.object().shape({
+  // name: yup.string().required()
+  email: yup
+    .string()
+    .label("Email")
+    .email()
+    .required(),
+  password: yup
+    .string()
+    .label("Password")
+    .required()
+    .min(2, "password too short")
+    .max(7, "pass too long"),
+  confirmPassword: yup
+    .string()
+    .required()
+    .label("Confirm Password")
+    .test("passwords-match", "Passwords must match", function(value) {
+      return (
+        //this.parent => our validation schema
+        this.parent.password === value
+      );
+    }),
+  agreeToTerms: yup
+    .boolean()
+    .label("Terms")
+    .test("is-true", "must agree to terms to continue", value => {
+      return value === true;
+    })
+});
+
+const StyledInput = ({ label, formikProps, formikKey, ...props }) => {
+  const inputsStyles = {
+    borderWidth: 1,
+    borderColor: "black",
+    padding: 10,
+    marginBottom: 3
+  };
+
+  if (formikProps.touched[formikKey] && formikProps.errors[formikKey]) {
+    inputsStyles.borderColor = "red";
+  }
+
+  return (
+    <FieldWrapper label={label} formikKey={formikKey} formikProps={formikProps}>
+      <TextInput
+        style={inputsStyles}
+        onChangeText={formikProps.handleChange(formikKey)}
+        onBlur={formikProps.handleBlur(formikKey)}
+        {...props}
+      />
+    </FieldWrapper>
+  );
+};
+
+const StyledSwitch = ({ label, formikProps, formikKey, ...props }) => {
+  return (
+    <FieldWrapper label={label} formikKey={formikKey} formikProps={formikProps}>
+      <Switch
+        value={formikProps.values[formikKey]}
+        onValueChange={value => {
+          formikProps.setFieldValue(formikKey, value);
+        }}
+        {...props}
+      />
+    </FieldWrapper>
+  );
+};
+export default class App extends React.Component {
+  render() {
+    return (
+      <SafeAreaView style={{ padding: 10 }}>
+        <Formik
+          initialValues={{
+            email: "",
+            password: "",
+            confirmPassword: "",
+            agreeToTerms: ""
+          }}
+          onSubmit={(values, actions) => {
+            simulateSignUp({ email: values.email })
+              .then(() => {
+                alert(JSON.stringify(values));
+              })
+              .catch(error => {
+                actions.setFieldError("general", error.message);
+              })
+              .finally(() => {
+                actions.setSubmitting(false);
+              });
+          }}
+          validationSchema={validationSchema}
+        >
+          {formikProps => (
+            <React.Fragment>
+              <StyledInput
+                label="Email"
+                formikProps={formikProps}
+                formikKey="email"
+                placeholder="test@gmail.com"
+              />
+              <StyledInput
+                label="Password"
+                formikProps={formikProps}
+                formikKey="password"
+                placeholder="password"
+                secureTextEntry
+              />
+
+              <StyledInput
+                label="Confirm Password"
+                formikProps={formikProps}
+                formikKey="confirmPassword"
+                placeholder="Confirm password"
+                secureTextEntry
+              />
+
+              <StyledSwitch
+                label="agree to terms"
+                formikKey="agreeToTerms"
+                formikProps={formikProps}
+              />
+
+              {formikProps.isSubmitting ? (
+                <ActivityIndicator />
+              ) : (
+                <React.Fragment>
+                  <Button title="Submit" onPress={formikProps.handleSubmit} />
+                  <Text style={{ color: "red" }}>
+                    {formikProps.errors.general}
+                  </Text>
+                </React.Fragment>
+              )}
+            </React.Fragment>
+          )}
+        </Formik>
+      </SafeAreaView>
+    );
+  }
+}
+
+
+//formikProps.errors.general error is used for servererror
+//if the server gives us where the error is we can change the catch to update where the error will occur.
