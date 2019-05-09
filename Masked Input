@@ -1,0 +1,47 @@
+import React from 'react';
+import {TextInputMask} from 'react-native-masked-text';
+import {View, Text, TextInput} from 'react-native';
+
+const StyledInput = ({formikProps, formikKey, ...props}) => {
+  var inputsStyles = {borderBottomWidth: 1, borderBottomColor: 'purple'};
+
+  if (formikProps.touched[formikKey] && formikProps.errors[formikKey]) {
+    inputsStyles.borderBottomColor = 'red';
+  }
+  var propsInput = {
+    onBlur: formikProps.handleBlur(formikKey),
+    style: {
+      borderBottomWidth: 1,
+      borderBottomColor: formikProps.touched[formikKey] && formikProps.errors[formikKey] ? 'red' : '#cccccc'
+    },
+    ...props
+  };
+  return (
+    <View>
+      <TextInputMask
+        type={'custom'}
+        options={{
+          /**
+           * mask: (String | required | default '')
+           * the mask pattern
+           * 9 - accept digit.
+           * A - accept alpha.
+           * S - accept alphanumeric.
+           * * - accept all, EXCEPT white space.
+           */
+          mask: '9999999-99.9999.9.99.9999'
+        }}
+        value={formikProps.values.processNumber}
+        onChangeText={text => formikProps.setValues({processNumber: text})}
+        customTextInput={TextInput}
+        customTextInputProps={{underlineColorAndroid: 'transparent', ...propsInput}}
+      />
+      <Text style={{color: 'red'}}>{formikProps.touched[formikKey] && formikProps.errors[formikKey]}</Text>
+    </View>
+  );
+};
+
+export default StyledInput;
+
+
+
